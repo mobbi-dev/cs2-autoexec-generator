@@ -2,7 +2,7 @@
 Generate a custom CS2 autoexec.cfg with personalized settings and keybinds
 
 ## 🌐 Live Demo
-[![View Demo](https://img.shields.io/badge/View-Demo-blue?style=for-the-badge)](https://mobbi.dev/cs2-autoexec-generator)
+[![View Demo](https://img.shields.io/badge/View-Demo-green?style=for-the-badge)](https://mobbi.dev/cs2-autoexec-generator)
 
 ## ✨ Features
 
