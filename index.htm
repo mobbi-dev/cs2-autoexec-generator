@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <title>Counter-Strike 2 Autoexec Generator &amp; CS2 Command Reference</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta name="theme-color" content="#211f22">
+
+    <link rel="shortcut icon" href="favicon.ico">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com/">
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" />
+    <link rel="stylesheet" href="assets/css/main.css?1.0">
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+
+</head>
+
+<body>
+
+    <section class="section">
+        <div class="container">
+            <div id="app">
+                <h1 class="title has-text-white has-text-centered">CS2 autoexec.cfg Generator</h1>
+
+                <div class="slider-container">
+                    <div class="slider-image-wrapper">
+                        <img :src="currentMapImage" alt="Map Preview" class="slider-image" @load="drawCrosshair" />
+                        <canvas id="crosshairCanvas" width="930" height="300"></canvas>
+                    </div>
+                    <button class="slider-arrow left-arrow" @click="prevImage">&#9664;</button>
+                    <button class="slider-arrow right-arrow" @click="nextImage">&#9654;</button>
+                    <div class="slider-dots">
+                        <span v-for="(image, index) in mapImages" :key="index"
+                            :class="{ active: index === currentImageIndex }" @click="currentImageIndex = index"></span>
+                    </div>
+                </div>
+
+                <!-- Crosshair style -->
+                <div class="field">
+                    <label class="label">Crosshair style</label>
+                    <div class="control radio-group">
+                        <label class="radio">
+                            <input type="radio" value="2" v-model.number="crosshair.style">
+                            Classic
+                        </label>
+                        <label class="radio">
+                            <input type="radio" value="4" v-model.number="crosshair.style">
+                            Classic Static
+                        </label>
+                        <label class="radio">
+                            <input type="radio" value="5" v-model.number="crosshair.style">
+                            Legacy
+                        </label>
+                    </div>
+                    <p class="help">Classic = crosshair reacts to shooting. Static = fixed. Legacy = old CS style.</p>
+                </div>
+
+                <div class="field">
+                    <label class="checkbox">
+                        <input type="checkbox" v-model="crosshair.tstyle" />
+                        T-style
+                    </label>
+                </div>
+
+                <!-- Crosshair RGB -->
+                <div class="field">
+                    <label class="label">Crosshair color (RGB):</label>
+
+                    <div class="field rgb-slider">
+                        <label class="label">R: {{ rgb.r }}</label>
+                        <input class="slider is-fullwidth is-danger" type="range" min="0" max="255"
+                            v-model.number="rgb.r" />
+                    </div>
+
+                    <div class="field rgb-slider">
+                        <label class="label">G: {{ rgb.g }}</label>
+                        <input class="slider is-fullwidth is-success" type="range" min="0" max="255"
+                            v-model.number="rgb.g" />
+                    </div>
+
+                    <div class="field rgb-slider">
+                        <label class="label">B: {{ rgb.b }}</label>
+                        <input class="slider is-fullwidth is-info" type="range" min="0" max="255"
+                            v-model.number="rgb.b" />
+                    </div>
+
+                    <div>
+                        <div class="color-preview" :style="{ backgroundColor: rgbString }"></div>
+                    </div>
+                </div>
+
+                <!-- Presets -->
+                <div class="field">
+                    <label class="label">Or pick a preset:</label>
+                    <div class="control">
+                        <div class="color-palette" id="colorPalette">
+                            <div class="color-swatch" v-for="(color, name) in presetColors" :key="name" :title="name"
+                                :style="{ backgroundColor: color.hex }" :class="{ selected: selectedPreset === name }"
+                                @click="selectPreset(name)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Crosshair settings -->
+                <div class="field">
+                    <label class="label">Crosshair settings:</label>
+
+                    <div class="field">
+                        <label class="label">Size: {{ crosshair.size }}</label>
+                        <input class="slider" type="range" min="0" max="15" step="0.1"
+                            v-model.number="crosshair.size" />
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Thickness: {{ crosshair.thickness }}</label>
+                        <input class="slider" type="range" min="0.1" max="24" step="0.1"
+                            v-model.number="crosshair.thickness" />
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Gap: {{ crosshair.gap }}</label>
+                        <input class="slider" type="range" min="-5" max="10" step="0.1"
+                            v-model.number="crosshair.gap" />
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Alpha: {{ crosshair.alpha }}</label>
+                        <input class="slider" type="range" min="0" max="255" v-model.number="crosshair.alpha" />
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Outline thickness: {{ crosshair.outlineThickness }}</label>
+                        <input class="slider" type="range" min="0" max="3" step="0.1"
+                            v-model.number="crosshair.outlineThickness" />
+                    </div>
+
+                    <div class="field">
+                        <label class="checkbox">
+                            <input type="checkbox" v-model="crosshair.outline" />
+                            Outline
+                        </label>
+                    </div>
+
+                    <div class="field">
+                        <label class="checkbox">
+                            <input type="checkbox" v-model="crosshair.dot" />
+                            Center Dot
+                        </label>
+                    </div>
+
+                    <div class="field">
+                        <label class="checkbox">
+                            <input type="checkbox" v-model="crosshair.followRecoil" />
+                            Follow recoil
+                        </label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Mouse sensitivity:</label>
+                    <div class="control">
+                        <input class="input" type="number" v-model="sensitivity" step="0.1" min="0" />
+                    </div>
+                </div>
+
+                <!-- HUD Settings -->
+                <div class="field">
+                    <label class="label">HUD color:</label>
+                    <div class="control">
+                        <div class="select">
+                            <select v-model.number="hudColor">
+                                <option value="1">White</option>
+                                <option value="3">Light Blue</option>
+                                <option value="4">Dark Blue</option>
+                                <option value="5">Purple</option>
+                                <option value="6">Red</option>
+                                <option value="7">Orange</option>
+                                <option value="8">Yellow</option>
+                                <option value="9">Green</option>
+                                <option value="10">Aqua</option>
+                                <option value="11">Light Pink</option>
+                                <option value="12">Pink</option>
+                                <option value="0">Default</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Radar HUD Size -->
+                <div class="field">
+                    <label class="label">Radar HUD size: {{ radarHUDScale }}</label>
+                    <input class="slider" type="range" min="0.8" max="1.3" step="0.01" v-model.number="radarHUDScale" />
+                </div>
+
+                <!-- Radar Map Zoom -->
+                <div class="field">
+                    <label class="label">Radar map zoom: {{ radarMapZoom }}</label>
+                    <input class="slider" type="range" min="0.25" max="1" step="0.01" v-model.number="radarMapZoom" />
+                </div>
+
+                <!-- Viewmodel settings -->
+                <div class="field">
+                    <label class="label">Viewmodel settings:</label>
+
+                    <div class="field">
+                        <label class="label">FOV: {{ viewmodel.fov }}</label>
+                        <input class="slider" type="range" min="54" max="68" v-model.number="viewmodel.fov" />
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Offset X: {{ viewmodel.offsetX }}</label>
+                        <input class="slider" type="range" min="-2.5" max="2.5" step="0.1"
+                            v-model.number="viewmodel.offsetX" />
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Offset Y: {{ viewmodel.offsetY }}</label>
+                        <input class="slider" type="range" min="-2" max="2" step="0.1"
+                            v-model.number="viewmodel.offsetY" />
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Offset Z: {{ viewmodel.offsetZ }}</label>
+                        <input class="slider" type="range" min="-2" max="2" step="0.1"
+                            v-model.number="viewmodel.offsetZ" />
+                    </div>
+                </div>
+
+                <!-- Volume Settings -->
+                <div class="field">
+                    <label class="label">Volume settings:</label>
+                    <div class="field">
+                        <label class="label">Master Volume: {{ volumeMaster }}</label>
+                        <input class="slider" type="range" min="0" max="1" step="0.01" v-model.number="volumeMaster" />
+                    </div>
+                </div>
+
+                <!-- Miscellaneous Settings -->
+                <div class="field">
+                    <label class="label">Miscellaneous:</label>
+
+                    <div class="field">
+                        <label class="checkbox">
+                            <input type="checkbox" v-model="autoHelp" />
+                            cl_autohelp "0"
+                        </label>
+                    </div>
+
+                    <div class="field">
+                        <label class="checkbox">
+                            <input type="checkbox" v-model="showHelp" />
+                            cl_showhelp "0"
+                        </label>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">FPS max:</label>
+                        <input class="input" type="number" min="30" max="1000" step="1" v-model.number="fpsMax" />
+                    </div>
+                </div>
+
+                <!-- Binds -->
+                <div class="field jump-binds">
+                    <label class="label">Jump Bind(s):</label>
+                    <input class="input" type="text" v-model="binds.jump[0]" placeholder="e.g. space" />
+                    <input class="input" type="text" v-model="binds.jump[1]" placeholder="e.g. mwheelup (optional)" />
+                    <input class="input" type="text" v-model="binds.jump[2]" placeholder="e.g. mwheeldown (optional)" />
+                </div>
+
+                <div class="field">
+                    <label class="label">Fire:</label>
+                    <input class="input" type="text" v-model="binds.fire" placeholder="e.g. mouse1" />
+                </div>
+
+                <div class="field">
+                    <label class="label">Secondary Fire:</label>
+                    <input class="input" type="text" v-model="binds.secondaryFire" placeholder="e.g. mouse2" />
+                </div>
+
+                <div class="field">
+                    <label class="label">Toggle Console:</label>
+                    <input class="input" type="text" v-model="binds.toggleConsole" placeholder="e.g. `" />
+                </div>
+
+                <div class="field">
+                    <label class="label">Use Microphone:</label>
+                    <input class="input" type="text" v-model="binds.mic" placeholder="e.g. k" />
+                </div>
+
+                <div class="field">
+                    <label class="label">Switch Viewmodel Hand:</label>
+                    <input class="input" type="text" v-model="binds.viewmodelToggle" placeholder="e.g. f10" />
+                </div>
+
+                <div class="field">
+                    <label class="label">Primary Weapon:</label>
+                    <input class="input" type="text" v-model="binds.primaryWeapon" placeholder="e.g. 1" />
+                </div>
+
+                <div class="field">
+                    <label class="label">Secondary Weapon:</label>
+                    <input class="input" type="text" v-model="binds.secondaryWeapon" placeholder="e.g. 2" />
+                </div>
+
+                <div class="field">
+                    <label class="label">Melee Weapon:</label>
+                    <input class="input" type="text" v-model="binds.meleeWeapon" placeholder="e.g. 3" />
+                </div>
+
+                <div class="field">
+                    <label class="label">Cycle Grenades:</label>
+                    <input class="input" type="text" v-model="binds.cycleGrenades" placeholder="e.g. 4" />
+                </div>
+
+                <div class="field">
+                    <label class="label">Explosives & Traps:</label>
+                    <input class="input" type="text" v-model="binds.explosives" placeholder="e.g. 5" />
+                </div>
+
+                <div class="field">
+                    <label class="label">HE Grenade:</label>
+                    <input class="input" type="text" v-model="binds.heGrenade" placeholder="e.g. h" />
+                </div>
+
+                <div class="field">
+                    <label class="label">Flashbang:</label>
+                    <input class="input" type="text" v-model="binds.flashbang" placeholder="e.g. f" />
+                </div>
+
+                <div class="field">
+                    <label class="label">Smoke Grenade:</label>
+                    <input class="input" type="text" v-model="binds.smoke" placeholder="e.g. g" />
+                </div>
+
+                <div class="field">
+                    <label class="label">Molotov Cocktail:</label>
+                    <input class="input" type="text" v-model="binds.molotov" placeholder="e.g. m" />
+                </div>
+
+                <!-- Generate + Download + Reset -->
+                <div class="field is-grouped button-group is-grouped-centered is-flex is-flex-wrap-wrap">
+                    <p class="control mb-3">
+                        <button class="button actions is-primary" @click="generate">Generate autoexec.cfg</button>
+                    </p>
+                    <p class="control mb-3">
+                        <button class="button actions is-link" @click="download" :disabled="!output">Download .cfg
+                            file</button>
+                    </p>
+                    <p class="control mb-3">
+                        <button class="button actions is-danger" @click="resetSettings">Reset to Defaults</button>
+                    </p>
+                </div>
+
+                <div class="field">
+                    <label class="label">Generated config:</label>
+                    <textarea class="textarea" v-model="output"
+                        placeholder="Your config will appear here..."></textarea>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="content has-text-centered">
+            <p>
+                <a href="https://mobbi.dev/cs2-autoexec-generator">
+                    <img src="https://img.shields.io/badge/View-Demo-green?style=for-the-badge" />
+                </a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="assets/js/cfg.js"></script>
+
+</body>
+</html>
