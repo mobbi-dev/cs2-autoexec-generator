@@ -122,6 +122,7 @@ createApp({
         toggleConsole: ".",
         mic: "q",
         viewmodelToggle: "l",
+        scoreboard: "TAB",
         primaryWeapon: "MOUSE5",
         secondaryWeapon: "MOUSE4",
         meleeWeapon: "1",
@@ -396,6 +397,11 @@ createApp({
           description: "Switch Viewmodel Hand",
         },
         {
+          key: this.binds.scoreboard,
+          command: "+showscores",
+          description: "Scoreboard",
+        },
+        {
           key: this.binds.primaryWeapon,
           command: "slot1",
           description: "Primary Weapon",
@@ -502,6 +508,7 @@ createApp({
           toggleConsole: ".",
           mic: "q",
           viewmodelToggle: "l",
+          scoreboard: "TAB",
           primaryWeapon: "MOUSE5",
           secondaryWeapon: "MOUSE4",
           meleeWeapon: "1",
