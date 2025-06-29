@@ -21,7 +21,7 @@ This little web tool allows players to create and download their own autoexec co
 
 1. Choose your desired settings using the form UI.
 2. Preview your generated config in real time.
-3. Click "Download autoexec" — and you're ready to go!
+3. Click "Download .cfg file" — and you're ready to go!
 4. Place the file in your CS2 config folder:
 
 ## 🧱 Built With
