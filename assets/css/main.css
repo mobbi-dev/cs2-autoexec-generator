@@ -237,6 +237,10 @@ input[type="range"] {
         height: 150px;
     }
 
+    .slider-container.is-sticky {
+        height: 150px;
+    }
+
     .color-swatch {
         width: 40px;
         height: 40px;
@@ -261,6 +265,10 @@ input[type="range"] {
 
 @media (max-width: 480px) {
     .slider-container {
+        height: 120px;
+    }
+
+    .slider-container.is-sticky {
         height: 120px;
     }
 }
