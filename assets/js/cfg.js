@@ -137,6 +137,16 @@ createApp({
       },
     };
   },
+  created() {
+    const storedSticky = localStorage.getItem('isStickyEnabled');
+    if (storedSticky !== null) {
+      try {
+        this.stickyEnabled = JSON.parse(storedSticky);
+      } catch (e) {
+        console.warn('Invalid value in localStorage for crosshairSticky');
+      }
+    }
+  },
   computed: {
     rgbString() {
       return `rgba(${this.rgb.r},${this.rgb.g},${this.rgb.b},${this.crosshair.alpha / 255
@@ -171,6 +181,9 @@ createApp({
     },
     currentImageIndex: {
       handler: "drawCrosshair", // Redraw crosshair when image changes
+    },
+    stickyEnabled(isStickyEnabled) {
+      localStorage.setItem('isStickyEnabled', JSON.stringify(isStickyEnabled));
     },
   },
   methods: {
