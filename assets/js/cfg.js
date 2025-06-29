@@ -29,6 +29,8 @@ createApp({
     };
 
     return {
+      stickyEnabled: true,
+      
       // Main settings
       sensitivity: 2.5,
       radarHUDScale: 1.0,

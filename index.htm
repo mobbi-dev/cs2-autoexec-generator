@@ -32,7 +32,7 @@
             <div id="app">
                 <h1 class="title has-text-white has-text-centered">CS2 autoexec.cfg Generator</h1>
 
-                <div class="slider-container">
+               <div :class="['slider-container', { 'is-sticky': stickyEnabled }]">
                     <div class="slider-image-wrapper">
                         <img :src="currentMapImage" alt="Map Preview" class="slider-image" @load="drawCrosshair" />
                         <canvas id="crosshairCanvas" width="930" height="300"></canvas>
@@ -45,6 +45,13 @@
                     </div>
                 </div>
 
+            <div class="field">
+                <input id="stickyToggle" type="checkbox" name="sticky" class="switch is-rounded is-info" v-model="stickyEnabled">
+                <label for="stickyToggle">
+                    Crosshair preview {{ stickyEnabled ? 'follows scrolling' : 'stays in place' }}
+                </label>
+            </div>
+ 
                 <!-- Crosshair style -->
                 <div class="field">
                     <label class="label">Crosshair style</label>
