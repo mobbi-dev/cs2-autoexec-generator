@@ -30,7 +30,7 @@ createApp({
 
     return {
       stickyEnabled: true,
-      
+
       // Main settings
       sensitivity: 2.5,
       radarHUDScale: 1.0,
@@ -51,7 +51,7 @@ createApp({
       volumeMaster: 0.8, // Volume 0.0 - 1.0
 
       autoHelp: false,
-      howHelp: false,
+      showHelp: false,
       fpsMax: 300,
 
       // Static data for reset
@@ -532,5 +532,132 @@ createApp({
         (this.currentImageIndex - 1 + this.mapImages.length) %
         this.mapImages.length;
     },
+    handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (file.size > 1048576) {
+        alert("The file is too large. Maximum size 1MB.");
+        return;
+      }
+
+      if (!file.name.toLowerCase().endsWith('.cfg')) {
+        alert("Only .cfg files are allowed.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target.result;
+        this.parseCfg(content);
+      };
+      reader.readAsText(file);
+    },
+    parseCfg(content) {
+
+      function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      }
+
+      const lines = content.split('\n');
+
+      const setVal = (regex, setter) => {
+        const line = lines.find(line => regex.test(line));
+        if (line) {
+          const match = line.match(regex);
+          if (match) setter(match[1]);
+        }
+      };
+
+      // Crosshair
+      setVal(/cl_crosshairstyle\s+"?(\d+)"?/, val => this.crosshair.style = parseInt(val));
+      setVal(/cl_crosshairsize\s+"?([\d.]+)"?/, val => this.crosshair.size = parseFloat(val));
+      setVal(/cl_crosshairthickness\s+"?([\d.]+)"?/, val => this.crosshair.thickness = parseFloat(val));
+      setVal(/cl_crosshairgap\s+"?([\d.-]+)"?/, val => this.crosshair.gap = parseFloat(val));
+      setVal(/cl_crosshairalpha\s+"?(\d+)"?/, val => this.crosshair.alpha = parseInt(val));
+      setVal(/cl_crosshair_drawoutline\s+"?(\d)"?/, val => this.crosshair.outline = val === '1');
+      setVal(/cl_crosshairdot\s+"?(\d)"?/, val => this.crosshair.dot = val === '1');
+      setVal(/cl_crosshair_recoil\s+"?(\d)"?/, val => this.crosshair.followRecoil = val === '1');
+      setVal(/cl_crosshair_outlinethickness\s+"?([\d.]+)"?/, val => this.crosshair.outlineThickness = parseFloat(val));
+
+      // Sensitivity
+      setVal(/sensitivity\s+"?([\d.]+)"?/, val => this.sensitivity = parseFloat(val));
+
+      // HUD
+      setVal(/cl_hud_color\s+"?(\d+)"?/, val => this.hudColor = parseInt(val));
+
+      // Radar
+      setVal(/cl_hud_radar_scale\s+"?([\d.]+)"?/, val => this.radarHUDScale = parseFloat(val));
+      setVal(/cl_radar_scale\s+"?([\d.]+)"?/, val => this.radarMapZoom = parseFloat(val));
+
+      // Viewmodel
+      setVal(/viewmodel_fov\s+"?([\d.]+)"?/, val => this.viewmodel.fov = parseFloat(val));
+      setVal(/viewmodel_offset_x\s+"?([\d.-]+)"?/, val => this.viewmodel.offsetX = parseFloat(val));
+      setVal(/viewmodel_offset_y\s+"?([\d.-]+)"?/, val => this.viewmodel.offsetY = parseFloat(val));
+      setVal(/viewmodel_offset_z\s+"?([\d.-]+)"?/, val => this.viewmodel.offsetZ = parseFloat(val));
+
+      // Volume
+      setVal(/volume\s+"?([\d.]+)"?/, val => this.volumeMaster = parseFloat(val));
+
+      // Misc
+      setVal(/cl_autohelp\s+"?(\d)"?/, val => this.autoHelp = val === '1');
+      setVal(/cl_showhelp\s+"?(\d)"?/, val => this.showHelp = val === '1');
+      setVal(/fps_max\s+"?(\d+)"?/, val => this.fpsMax = parseInt(val));
+
+      // Binds (jump can be bound to multiple keys)
+      const jumpBinds = [];
+      lines.forEach(line => {
+        const match = line.match(/bind\s+"?([^"]+)"?\s+"?(\+jump)"?/i);
+        if (match) jumpBinds.push(match[1]);
+      });
+      this.binds.jump = jumpBinds.length ? jumpBinds : [];
+
+      const bindKeys = ['fire', 'secondaryFire', 'toggleConsole', 'mic', 'viewmodelToggle', 'scoreboard',
+        'primaryWeapon', 'secondaryWeapon', 'meleeWeapon', 'cycleGrenades', 'explosives',
+        'heGrenade', 'flashbang', 'smoke', 'molotov'];
+
+      const foundBinds = {};
+
+      // Other binds
+      const bindRegex = (action, target) => {
+        const escapedAction = escapeRegExp(action);
+        const regex = new RegExp(`bind\\s+"?([^"]+)"?\\s+"?${escapedAction}"?`, 'i');
+        const line = lines.find(line => regex.test(line));
+        if (line) {
+          const match = line.match(regex);
+          if (match) {
+            foundBinds[target] = match[1];
+          }
+        }
+      };
+
+      bindKeys.forEach(key => {
+        let actionString = '';
+        switch (key) {
+          case 'fire': actionString = '+attack'; break;
+          case 'secondaryFire': actionString = '+attack2'; break;
+          case 'toggleConsole': actionString = 'toggleconsole'; break;
+          case 'mic': actionString = '+voicerecord'; break;
+          case 'viewmodelToggle': actionString = 'toggle cl_righthand 0 1'; break;
+          case 'scoreboard': actionString = '+score'; break;
+          case 'primaryWeapon': actionString = 'slot1'; break;
+          case 'secondaryWeapon': actionString = 'slot2'; break;
+          case 'meleeWeapon': actionString = 'slot3'; break;
+          case 'cycleGrenades': actionString = 'slot4'; break;
+          case 'explosives': actionString = 'slot5'; break;
+          case 'heGrenade': actionString = 'use weapon_hegrenade'; break;
+          case 'flashbang': actionString = 'use weapon_flashbang'; break;
+          case 'smoke': actionString = 'use weapon_smokegrenade'; break;
+          case 'molotov': actionString = 'use weapon_molotov'; break;
+        }
+        bindRegex(actionString, key);
+      });
+
+      bindKeys.forEach(key => {
+        this.binds[key] = foundBinds[key] || '';
+      });
+
+      this.generate();
+    }
   },
 }).mount("#app");

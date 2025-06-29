@@ -360,7 +360,7 @@
                     <input class="input" type="text" v-model="binds.molotov" placeholder="e.g. m" />
                 </div>
 
-                <!-- Generate + Download + Reset -->
+                <!-- Generate + Download + Reset + Upload -->
                 <div class="field is-grouped button-group is-grouped-centered is-flex is-flex-wrap-wrap">
                     <p class="control mb-3">
                         <button class="button actions is-primary" @click="generate">Generate autoexec.cfg</button>
@@ -371,6 +371,13 @@
                     </p>
                     <p class="control mb-3">
                         <button class="button actions is-danger" @click="resetSettings">Reset to Defaults</button>
+                    </p>
+
+                    <p class="control mb-3">
+                        <label class="button actions is-info">
+                            Upload config
+                            <input type="file" @change="handleFileUpload" accept=".cfg" hidden>
+                        </label>
                     </p>
                 </div>
 
