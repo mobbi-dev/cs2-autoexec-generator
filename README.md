@@ -24,6 +24,8 @@ This little web tool allows players to create and download their own autoexec co
 3. Click "Download .cfg file" — and you're ready to go!
 4. Place the file in your CS2 config folder:
 
+```C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\cfg```
+
 ## 🧱 Built With
 
 - [Vue.js](https://vuejs.org/)
