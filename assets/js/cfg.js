@@ -472,6 +472,13 @@ createApp({
 
       cfg += `\n`;
 
+      if (this.extraCfgLines && this.extraCfgLines.length > 0) {
+        cfg += `\n// Additional configs from uploaded file\n`;
+        this.extraCfgLines.forEach(line => {
+          cfg += `${line}\n`;
+        });
+      }
+
       this.output = cfg;
     },
     // Download .cfg
@@ -567,18 +574,21 @@ createApp({
       reader.readAsText(file);
     },
     parseCfg(content) {
-
       function escapeRegExp(string) {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       }
 
       const lines = content.split('\n');
+      const matchedLines = new Set();
 
       const setVal = (regex, setter) => {
         const line = lines.find(line => regex.test(line));
         if (line) {
           const match = line.match(regex);
-          if (match) setter(match[1]);
+          if (match) {
+            setter(match[1]);
+            matchedLines.add(line.trim());
+          }
         }
       };
 
@@ -592,6 +602,12 @@ createApp({
       setVal(/cl_crosshairdot\s+"?(\d)"?/, val => this.crosshair.dot = val === '1');
       setVal(/cl_crosshair_recoil\s+"?(\d)"?/, val => this.crosshair.followRecoil = val === '1');
       setVal(/cl_crosshair_outlinethickness\s+"?([\d.]+)"?/, val => this.crosshair.outlineThickness = parseFloat(val));
+      setVal(/cl_crosshair_t\s+"?(\d)"?/, val => this.crosshair.tstyle = val === '1');
+      setVal(/cl_crosshaircolor_r\s+"?(\d+)"?/, val => this.rgb.r = parseInt(val));
+      setVal(/cl_crosshaircolor_g\s+"?(\d+)"?/, val => this.rgb.g = parseInt(val));
+      setVal(/cl_crosshaircolor_b\s+"?(\d+)"?/, val => this.rgb.b = parseInt(val));
+      
+      setVal(/cl_crosshairusealpha\s+"?(\d)"?/, val => this.crosshair.useAlpha = val === '1');
 
       // Sensitivity
       setVal(/sensitivity\s+"?([\d.]+)"?/, val => this.sensitivity = parseFloat(val));
@@ -621,56 +637,50 @@ createApp({
       const jumpBinds = [];
       lines.forEach(line => {
         const match = line.match(/bind\s+"?([^"]+)"?\s+"?(\+jump)"?/i);
-        if (match) jumpBinds.push(match[1]);
+        if (match) {
+          jumpBinds.push(match[1]);
+          matchedLines.add(line.trim());
+        }
       });
       this.binds.jump = jumpBinds.length ? jumpBinds : [];
 
-      const bindKeys = ['fire', 'secondaryFire', 'toggleConsole', 'mic', 'viewmodelToggle', 'scoreboard',
-        'primaryWeapon', 'secondaryWeapon', 'meleeWeapon', 'cycleGrenades', 'explosives',
-        'heGrenade', 'flashbang', 'smoke', 'molotov'];
+      const singleBinds = [
+        { key: 'fire', command: '+attack' },
+        { key: 'secondaryFire', command: '+attack2' },
+        { key: 'toggleConsole', command: 'toggleconsole' },
+        { key: 'mic', command: '+voicerecord' },
+        { key: 'viewmodelToggle', command: 'toggleviewmodel' },
+        { key: 'scoreboard', command: '+showscores' },
+        { key: 'primaryWeapon', command: 'slot1' },
+        { key: 'secondaryWeapon', command: 'slot2' },
+        { key: 'meleeWeapon', command: 'slot3' },
+        { key: 'cycleGrenades', command: 'slot4' },
+        { key: 'explosives', command: 'slot5' },
+        { key: 'heGrenade', command: 'use weapon_hegrenade' },
+        { key: 'flashbang', command: 'use weapon_flashbang' },
+        { key: 'smoke', command: 'use weapon_smokegrenade' },
+        { key: 'molotov', command: 'use weapon_molotov; use weapon_incgrenade' },
+      ];
 
-      const foundBinds = {};
-
-      // Other binds
-      const bindRegex = (action, target) => {
-        const escapedAction = escapeRegExp(action);
-        const regex = new RegExp(`bind\\s+"?([^"]+)"?\\s+"?${escapedAction}"?`, 'i');
+      singleBinds.forEach(bind => {
+        const escaped = escapeRegExp(bind.command);
+        const regex = new RegExp(`bind\\s+"?([^"]+)"?\\s+"?${escaped}"?`, 'i');
         const line = lines.find(line => regex.test(line));
         if (line) {
           const match = line.match(regex);
           if (match) {
-            foundBinds[target] = match[1];
+            this.binds[bind.key] = match[1];
+            matchedLines.add(line.trim());
           }
         }
-      };
-
-      bindKeys.forEach(key => {
-        let actionString = '';
-        switch (key) {
-          case 'fire': actionString = '+attack'; break;
-          case 'secondaryFire': actionString = '+attack2'; break;
-          case 'toggleConsole': actionString = 'toggleconsole'; break;
-          case 'mic': actionString = '+voicerecord'; break;
-          case 'viewmodelToggle': actionString = 'toggle cl_righthand 0 1'; break;
-          case 'scoreboard': actionString = '+score'; break;
-          case 'primaryWeapon': actionString = 'slot1'; break;
-          case 'secondaryWeapon': actionString = 'slot2'; break;
-          case 'meleeWeapon': actionString = 'slot3'; break;
-          case 'cycleGrenades': actionString = 'slot4'; break;
-          case 'explosives': actionString = 'slot5'; break;
-          case 'heGrenade': actionString = 'use weapon_hegrenade'; break;
-          case 'flashbang': actionString = 'use weapon_flashbang'; break;
-          case 'smoke': actionString = 'use weapon_smokegrenade'; break;
-          case 'molotov': actionString = 'use weapon_molotov'; break;
-        }
-        bindRegex(actionString, key);
       });
+      
 
-      bindKeys.forEach(key => {
-        this.binds[key] = foundBinds[key] || '';
-      });
+      this.extraCfgLines = lines
+        .map(line => line.trim())
+        .filter(line => line && !matchedLines.has(line));
 
-      this.generate();
+        this.generate();
     }
   },
 }).mount("#app");
