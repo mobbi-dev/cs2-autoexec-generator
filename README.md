@@ -12,19 +12,24 @@ This little web tool allows players to create and download their own autoexec co
 - Customize:
   - Crosshair style and color
   - Viewmodel position and FOV
-  - Some Keybinds
+  - Keybinds
   - Volume preferences
 - Instantly preview and download your config
+- Copy config directly to clipboard
 - Clean, mobile-friendly user interface
 
 ## 💾 How It Works
 
 1. Choose your desired settings using the form UI.
 2. Preview your generated config in real time.
-3. Click "Download .cfg file" — and you're ready to go!
-4. Place the file in your CS2 config folder:
+3. Either:
+   - Click **Download .cfg file** to download the config file, or
+   - Click **Copy to Clipboard** to copy the config instantly.
+4. If you downloaded the file, place it in your CS2 config folder:
 
 ```C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\cfg```
+
+5. Launch CS2 and enjoy your custom config!
 
 ## 🧱 Built With
 
