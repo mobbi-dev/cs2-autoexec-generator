@@ -135,17 +135,11 @@ createApp({
         smoke: "x",
         molotov: "v",
       },
+      copySuccess: false,
     };
   },
   created() {
-    const storedSticky = localStorage.getItem('isStickyEnabled');
-    if (storedSticky !== null) {
-      try {
-        this.stickyEnabled = JSON.parse(storedSticky);
-      } catch (e) {
-        console.warn('Invalid value in localStorage for crosshairSticky');
-      }
-    }
+    this.loadSettings();
   },
   computed: {
     rgbString() {
@@ -172,24 +166,49 @@ createApp({
   },
   watch: {
     rgb: {
-      handler: "drawCrosshair",
+      handler() {
+        this.drawCrosshair();
+        this.saveSettings();
+      },
       deep: true,
     },
     crosshair: {
-      handler: "drawCrosshair",
+      handler() {
+        this.drawCrosshair();
+        this.saveSettings();
+      },
       deep: true,
     },
     currentImageIndex: {
-      handler: "drawCrosshair", // Redraw crosshair when image changes
+      handler() {
+        this.drawCrosshair();
+        this.saveSettings();
+      }, 
     },
     stickyEnabled(isStickyEnabled) {
-      localStorage.setItem('isStickyEnabled', JSON.stringify(isStickyEnabled));
+      this.saveSettings();
     },
+    sensitivity() { this.saveSettings(); },
+    radarHUDScale() { this.saveSettings(); },
+    radarMapZoom() { this.saveSettings(); },
+    hudColor() { this.saveSettings(); },
+    viewmodel: {
+        handler() { this.saveSettings(); },
+        deep: true
+    },
+    volumeMaster() { this.saveSettings(); },
+    autoHelp() { this.saveSettings(); },
+    showHelp() { this.saveSettings(); },
+    fpsMax() { this.saveSettings(); },
+    binds: {
+        handler() { this.saveSettings(); },
+        deep: true
+    }
   },
   methods: {
     updateCanvasDimensions() {
-      const canvas = document.getElementById("crosshairCanvas");
-      const parent = canvas.parentElement;
+      const canvas = this.$refs.crosshairCanvas;
+      const parent = canvas ? canvas.parentElement : null;
 
       if (canvas && parent) {
         // Get the actual computed CSS size of the canvas wrapper
@@ -211,7 +230,7 @@ createApp({
       this.drawCrosshair();
     },
     drawCrosshair() {
-      const canvas = document.getElementById("crosshairCanvas");
+      const canvas = this.$refs.crosshairCanvas;
       if (!canvas) return;
       const ctx = canvas.getContext("2d");
 
@@ -492,6 +511,64 @@ createApp({
       link.download = "autoexec.cfg";
       link.click();
     },
+    copyToClipboard() {
+        if (!this.output) return;
+        navigator.clipboard.writeText(this.output).then(() => {
+            this.copySuccess = true;
+            setTimeout(() => {
+                this.copySuccess = false;
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+        });
+    },
+    saveSettings() {
+        if (this.saveTimeout) clearTimeout(this.saveTimeout);
+        this.saveTimeout = setTimeout(() => {
+            const settings = {
+                sensitivity: this.sensitivity,
+                radarHUDScale: this.radarHUDScale,
+                radarMapZoom: this.radarMapZoom,
+                hudColor: this.hudColor,
+                rgb: this.rgb,
+                crosshair: this.crosshair,
+                viewmodel: this.viewmodel,
+                volumeMaster: this.volumeMaster,
+                autoHelp: this.autoHelp,
+                showHelp: this.showHelp,
+                fpsMax: this.fpsMax,
+                currentImageIndex: this.currentImageIndex,
+                binds: this.binds,
+                stickyEnabled: this.stickyEnabled
+            };
+            localStorage.setItem('cs2_autoexec_settings', JSON.stringify(settings));
+        }, 500);
+    },
+    loadSettings() {
+        const storedSettings = localStorage.getItem('cs2_autoexec_settings');
+        if (storedSettings) {
+            try {
+                const settings = JSON.parse(storedSettings);
+                // Merge loaded settings with defaults to ensure new fields are present
+                if (settings.sensitivity !== undefined) this.sensitivity = settings.sensitivity;
+                if (settings.radarHUDScale !== undefined) this.radarHUDScale = settings.radarHUDScale;
+                if (settings.radarMapZoom !== undefined) this.radarMapZoom = settings.radarMapZoom;
+                if (settings.hudColor !== undefined) this.hudColor = settings.hudColor;
+                if (settings.rgb) this.rgb = { ...this.rgb, ...settings.rgb };
+                if (settings.crosshair) this.crosshair = { ...this.crosshair, ...settings.crosshair };
+                if (settings.viewmodel) this.viewmodel = { ...this.viewmodel, ...settings.viewmodel };
+                if (settings.volumeMaster !== undefined) this.volumeMaster = settings.volumeMaster;
+                if (settings.autoHelp !== undefined) this.autoHelp = settings.autoHelp;
+                if (settings.showHelp !== undefined) this.showHelp = settings.showHelp;
+                if (settings.fpsMax !== undefined) this.fpsMax = settings.fpsMax;
+                if (settings.currentImageIndex !== undefined) this.currentImageIndex = settings.currentImageIndex;
+                if (settings.binds) this.binds = { ...this.binds, ...settings.binds };
+                if (settings.stickyEnabled !== undefined) this.stickyEnabled = settings.stickyEnabled;
+            } catch (e) {
+                console.warn('Failed to load settings from localStorage', e);
+            }
+        }
+    },
     // Reset settings
     resetSettings() {
       if (
@@ -541,6 +618,8 @@ createApp({
           smoke: "x",
           molotov: "v",
         };
+        
+        this.saveSettings(); // Save defaults
       }
     },
     nextImage() {

@@ -35,7 +35,7 @@
                <div :class="['slider-container', { 'is-sticky': stickyEnabled }]">
                     <div class="slider-image-wrapper">
                         <img :src="currentMapImage" alt="Map Preview" class="slider-image" @load="drawCrosshair" />
-                        <canvas id="crosshairCanvas" width="930" height="300"></canvas>
+                        <canvas id="crosshairCanvas" ref="crosshairCanvas" width="930" height="300"></canvas>
                     </div>
                     <button class="slider-arrow left-arrow" @click="prevImage">&#9664;</button>
                     <button class="slider-arrow right-arrow" @click="nextImage">&#9654;</button>
@@ -368,6 +368,12 @@
                     <p class="control mb-3">
                         <button class="button actions is-link" @click="download" :disabled="!output">Download .cfg
                             file</button>
+                    </p>
+                    <p class="control mb-3">
+                         <button class="button actions is-warning" @click="copyToClipboard" :disabled="!output">
+                            <span v-if="!copySuccess">Copy to Clipboard</span>
+                            <span v-else>Copied!</span>
+                        </button>
                     </p>
                     <p class="control mb-3">
                         <button class="button actions is-danger" @click="resetSettings">Reset to Defaults</button>
