@@ -1,4 +1,10 @@
 const { createApp } = Vue;
+const {
+  bindDefinitions,
+  createDefaultBinds,
+  getBindCaptureResult,
+  validateBinds,
+} = window.CS2BindUtils;
 
 createApp({
   data() {
@@ -29,7 +35,7 @@ createApp({
     };
 
     return {
-      stickyEnabled: true,
+      stickyEnabled: false,
 
       // Main settings
       sensitivity: 2.5,
@@ -61,11 +67,11 @@ createApp({
 
       // Map images
       mapImages: [
-        "./assets/maps/vertigo.png",
-        "./assets/maps/overpass.png",
-        "./assets/maps/nuke.png",
-        "./assets/maps/ancient.png",
-        "./assets/maps/train.png",
+        "./assets/maps/d2.webp",
+        "./assets/maps/nuke.webp",
+        "./assets/maps/overpass.webp",
+        "./assets/maps/train.webp",
+        "./assets/maps/anubis.webp",
       ],
       presetColors: {
         white: {
@@ -116,26 +122,11 @@ createApp({
         0: "Default",
       },
       currentImageIndex: 0,
+      activeBindCapture: null,
 
-      binds: {
-        jump: ["SPACE", "", ""],
-        fire: "MOUSE1",
-        secondaryFire: "MOUSE2",
-        toggleConsole: ".",
-        mic: "q",
-        viewmodelToggle: "l",
-        scoreboard: "TAB",
-        primaryWeapon: "MOUSE5",
-        secondaryWeapon: "MOUSE4",
-        meleeWeapon: "1",
-        cycleGrenades: "4",
-        explosives: "3",
-        heGrenade: "h",
-        flashbang: "z",
-        smoke: "x",
-        molotov: "v",
-      },
+      binds: createDefaultBinds(),
       copySuccess: false,
+      bindErrors: {},
     };
   },
   created() {
@@ -152,6 +143,12 @@ createApp({
     currentMapImage() {
       return this.mapImages[this.currentImageIndex];
     },
+    bindErrorList() {
+      return Object.values(this.bindErrors);
+    },
+    hasBindErrors() {
+      return this.bindErrorList.length > 0;
+    },
   },
   mounted() {
     // Initial draw when component mounts
@@ -160,9 +157,15 @@ createApp({
 
     // Add event listener for window resize
     window.addEventListener("resize", this.handleResize);
+    window.addEventListener("keydown", this.handleBindCaptureKeydown, true);
+    window.addEventListener("mousedown", this.handleBindCaptureMousedown, true);
+    window.addEventListener("wheel", this.handleBindCaptureWheel, { capture: true, passive: false });
   },
   beforeUnmount() {
     window.removeEventListener("resize", this.handleResize);
+    window.removeEventListener("keydown", this.handleBindCaptureKeydown, true);
+    window.removeEventListener("mousedown", this.handleBindCaptureMousedown, true);
+    window.removeEventListener("wheel", this.handleBindCaptureWheel, true);
   },
   watch: {
     rgb: {
@@ -183,7 +186,7 @@ createApp({
       handler() {
         this.drawCrosshair();
         this.saveSettings();
-      }, 
+      },
     },
     stickyEnabled(isStickyEnabled) {
       this.saveSettings();
@@ -363,8 +366,125 @@ createApp({
       [this.rgb.r, this.rgb.g, this.rgb.b] = color.rgb;
       this.selectedPreset = name;
     },
+    startBindCapture(bindKey) {
+      this.activeBindCapture = bindKey;
+    },
+    stopBindCapture() {
+      this.activeBindCapture = null;
+    },
+    isBindCapturing(bindKey) {
+      return this.activeBindCapture === bindKey;
+    },
+    bindCapturePlaceholder(bindKey, label) {
+      return this.isBindCapturing(bindKey)
+        ? `Press a key for ${label}`
+        : `Click to set ${label}`;
+    },
+    bindCaptureStatus(bindKey, label) {
+      return this.isBindCapturing(bindKey) ? label : "";
+    },
+    activeBindCaptureLabel() {
+      if (!this.activeBindCapture) return "";
+      if (this.activeBindCapture.startsWith("jump:")) {
+        const index = parseInt(this.activeBindCapture.split(":")[1], 10);
+        return `Jump Bind ${index + 1}`;
+      }
+
+      const bind = bindDefinitions.find((item) => item.key === this.activeBindCapture);
+      return bind ? bind.label : this.activeBindCapture;
+    },
+    bindFieldClass(bindKey) {
+      return {
+        "bind-capturing": this.isBindCapturing(bindKey),
+        "bind-invalid": !!this.bindErrors[bindKey],
+      };
+    },
+    assignActiveBindValue(value) {
+      if (!this.activeBindCapture || !value) return;
+
+      if (this.activeBindCapture.startsWith("jump:")) {
+        const index = parseInt(this.activeBindCapture.split(":")[1], 10);
+        this.captureJumpBind(index, value);
+        return;
+      }
+
+      this.captureBind(this.activeBindCapture, value);
+    },
+    assignEscapeToActiveBind() {
+      this.assignActiveBindValue("escape");
+    },
+    cancelBindCapture() {
+      this.stopBindCapture();
+    },
+    captureBind(bindKey, value) {
+      if (!value) return;
+      this.binds[bindKey] = value;
+      this.activeBindCapture = null;
+      this.generate();
+    },
+    captureJumpBind(index, value) {
+      if (!value) return;
+      this.binds.jump[index] = value;
+      this.activeBindCapture = null;
+      this.generate();
+    },
+    handleBindCaptureKeydown(event) {
+      if (!this.activeBindCapture) return;
+      const result = getBindCaptureResult(event);
+      if (result.action === "ignore") return;
+      event.preventDefault();
+      if (result.action === "cancel") {
+        this.stopBindCapture();
+        return;
+      }
+      if (result.action === "clear") {
+        if (this.activeBindCapture.startsWith("jump:")) {
+          const index = parseInt(this.activeBindCapture.split(":")[1], 10);
+          this.binds.jump[index] = "";
+        } else {
+          this.binds[this.activeBindCapture] = "";
+        }
+        this.stopBindCapture();
+        this.generate();
+        return;
+      }
+      if (this.activeBindCapture.startsWith("jump:")) {
+        const index = parseInt(this.activeBindCapture.split(":")[1], 10);
+        this.captureJumpBind(index, result.value);
+      } else {
+        this.captureBind(this.activeBindCapture, result.value);
+      }
+    },
+    handleBindCaptureMousedown(event) {
+      if (!this.activeBindCapture) return;
+      if (event.target && event.target.closest && event.target.closest(".bind-input")) return;
+      const result = getBindCaptureResult(event);
+      if (result.action !== "set") return;
+      event.preventDefault();
+      if (this.activeBindCapture.startsWith("jump:")) {
+        const index = parseInt(this.activeBindCapture.split(":")[1], 10);
+        this.captureJumpBind(index, result.value);
+      } else {
+        this.captureBind(this.activeBindCapture, result.value);
+      }
+    },
+    handleBindCaptureWheel(event) {
+      if (!this.activeBindCapture) return;
+      const result = getBindCaptureResult(event);
+      if (result.action !== "set") return;
+      event.preventDefault();
+      if (this.activeBindCapture.startsWith("jump:")) {
+        const index = parseInt(this.activeBindCapture.split(":")[1], 10);
+        this.captureJumpBind(index, result.value);
+      } else {
+        this.captureBind(this.activeBindCapture, result.value);
+      }
+    },
     // Generate configs
     generate() {
+      const validation = validateBinds(this.binds);
+      this.bindErrors = validation.errors;
+
       let cfg = `// CS2 Settings - https://mobbi.dev\n\n`;
       cfg += `// Crosshair\n`;
       cfg += `cl_crosshairstyle "${this.crosshair.style}"\n`;
@@ -400,92 +520,25 @@ createApp({
       cfg += `cl_showhelp ${this.showHelp ? "1" : "0"}\n`;
       cfg += `fps_max ${this.fpsMax}\n\n`;
       cfg += `// Binds\n`;
+      if (validation.issues.length > 0) {
+        cfg += `// Bind warnings\n`;
+        validation.issues.forEach((issue) => {
+          cfg += `// ${issue}\n`;
+        });
+        cfg += `\n`;
+      }
 
       cfg += `// Jump binds (space, mwheelup, mwheeldown)\n`;
-      this.binds.jump.forEach((key) => {
+      validation.normalizedBinds.jump.forEach((key) => {
         if (key && key.trim() !== "") {
           cfg += `bind "${key.trim()}" "+jump"\n`;
         }
       });
 
-      const singleBinds = [
-        { key: this.binds.fire, command: "+attack", description: "Fire" },
-        {
-          key: this.binds.secondaryFire,
-          command: "+attack2",
-          description: "Secondary Fire",
-        },
-        {
-          key: this.binds.toggleConsole,
-          command: "toggleconsole",
-          description: "Toggle Console",
-        },
-        {
-          key: this.binds.mic,
-          command: "+voicerecord",
-          description: "Use Microphone",
-        },
-        {
-          key: this.binds.viewmodelToggle,
-          command: "toggleviewmodel",
-          description: "Switch Viewmodel Hand",
-        },
-        {
-          key: this.binds.scoreboard,
-          command: "+showscores",
-          description: "Scoreboard",
-        },
-        {
-          key: this.binds.primaryWeapon,
-          command: "slot1",
-          description: "Primary Weapon",
-        },
-        {
-          key: this.binds.secondaryWeapon,
-          command: "slot2",
-          description: "Secondary Weapon",
-        },
-        {
-          key: this.binds.meleeWeapon,
-          command: "slot3",
-          description: "Melee Weapon",
-        },
-        {
-          key: this.binds.cycleGrenades,
-          command: "slot4",
-          description: "Cycle Grenades",
-        },
-        {
-          key: this.binds.explosives,
-          command: "slot5",
-          description: "Explosives & Traps",
-        },
-        {
-          key: this.binds.heGrenade,
-          command: "use weapon_hegrenade",
-          description: "HE Grenade",
-        },
-        {
-          key: this.binds.flashbang,
-          command: "use weapon_flashbang",
-          description: "Flashbang",
-        },
-        {
-          key: this.binds.smoke,
-          command: "use weapon_smokegrenade",
-          description: "Smoke Grenade",
-        },
-        {
-          key: this.binds.molotov,
-          command: "use weapon_molotov; use weapon_incgrenade",
-          description: "Molotov Cocktail",
-        },
-      ];
-
-      for (const bind of singleBinds) {
-        if (bind.key && bind.key.trim() !== "") {
-          cfg += `bind "${bind.key.trim()}" "${bind.command}"  // ${bind.description
-            }\n`;
+      for (const bind of bindDefinitions) {
+        const key = validation.normalizedBinds[bind.key];
+        if (key && key.trim() !== "") {
+          cfg += `bind "${key.trim()}" "${bind.command}"  // ${bind.label}\n`;
         }
       }
 
@@ -563,6 +616,9 @@ createApp({
                 if (settings.fpsMax !== undefined) this.fpsMax = settings.fpsMax;
                 if (settings.currentImageIndex !== undefined) this.currentImageIndex = settings.currentImageIndex;
                 if (settings.binds) this.binds = { ...this.binds, ...settings.binds };
+                const validation = validateBinds(this.binds);
+                this.binds = validation.normalizedBinds;
+                this.bindErrors = validation.errors;
                 if (settings.stickyEnabled !== undefined) this.stickyEnabled = settings.stickyEnabled;
             } catch (e) {
                 console.warn('Failed to load settings from localStorage', e);
@@ -599,26 +655,12 @@ createApp({
         this.fpsMax = 300;
 
         this.currentImageIndex = 0;
+        this.stickyEnabled = false;
+        this.activeBindCapture = null;
+        this.bindErrors = {};
 
-        this.binds = {
-          jump: ["SPACE", "", ""],
-          fire: "MOUSE1",
-          secondaryFire: "MOUSE2",
-          toggleConsole: ".",
-          mic: "q",
-          viewmodelToggle: "l",
-          scoreboard: "TAB",
-          primaryWeapon: "MOUSE5",
-          secondaryWeapon: "MOUSE4",
-          meleeWeapon: "1",
-          cycleGrenades: "4",
-          explosives: "3",
-          heGrenade: "h",
-          flashbang: "z",
-          smoke: "x",
-          molotov: "v",
-        };
-        
+        this.binds = createDefaultBinds();
+
         this.saveSettings(); // Save defaults
       }
     },
@@ -685,7 +727,7 @@ createApp({
       setVal(/cl_crosshaircolor_r\s+"?(\d+)"?/, val => this.rgb.r = parseInt(val));
       setVal(/cl_crosshaircolor_g\s+"?(\d+)"?/, val => this.rgb.g = parseInt(val));
       setVal(/cl_crosshaircolor_b\s+"?(\d+)"?/, val => this.rgb.b = parseInt(val));
-      
+
       setVal(/cl_crosshairusealpha\s+"?(\d)"?/, val => this.crosshair.useAlpha = val === '1');
 
       // Sensitivity
@@ -723,25 +765,7 @@ createApp({
       });
       this.binds.jump = jumpBinds.length ? jumpBinds : [];
 
-      const singleBinds = [
-        { key: 'fire', command: '+attack' },
-        { key: 'secondaryFire', command: '+attack2' },
-        { key: 'toggleConsole', command: 'toggleconsole' },
-        { key: 'mic', command: '+voicerecord' },
-        { key: 'viewmodelToggle', command: 'toggleviewmodel' },
-        { key: 'scoreboard', command: '+showscores' },
-        { key: 'primaryWeapon', command: 'slot1' },
-        { key: 'secondaryWeapon', command: 'slot2' },
-        { key: 'meleeWeapon', command: 'slot3' },
-        { key: 'cycleGrenades', command: 'slot4' },
-        { key: 'explosives', command: 'slot5' },
-        { key: 'heGrenade', command: 'use weapon_hegrenade' },
-        { key: 'flashbang', command: 'use weapon_flashbang' },
-        { key: 'smoke', command: 'use weapon_smokegrenade' },
-        { key: 'molotov', command: 'use weapon_molotov; use weapon_incgrenade' },
-      ];
-
-      singleBinds.forEach(bind => {
+      bindDefinitions.forEach(bind => {
         const escaped = escapeRegExp(bind.command);
         const regex = new RegExp(`bind\\s+"?([^"]+)"?\\s+"?${escaped}"?`, 'i');
         const line = lines.find(line => regex.test(line));
@@ -753,7 +777,7 @@ createApp({
           }
         }
       });
-      
+
 
       this.extraCfgLines = lines
         .map(line => line.trim())

@@ -92,10 +92,30 @@ label {
     margin-top: 0;
 }
 
-.jump-binds input.input {
-    width: 30%;
-    display: block;
-    margin-bottom: 1rem;
+.bind-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.bind-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 2rem;
+    align-items: start;
+}
+
+.bind-slot {
+    display: flex;
+    flex-direction: column;
+}
+
+.binds-group .input {
+    width: 100%;
+}
+
+.binds-end {
+    margin-bottom: 0;
 }
 
 /* Slider Container */
@@ -208,6 +228,48 @@ label {
     width: 30%;
 }
 
+.input.bind-capturing {
+    border-color: #00d1b2;
+    box-shadow: 0 0 0 1px rgba(0, 209, 178, 0.35);
+    background-color: #1f2b2a;
+    color: #ffffff;
+}
+
+.input.bind-capturing::placeholder {
+    color: #d9fffa;
+    opacity: 1;
+}
+
+.input.bind-invalid {
+    border-color: #ff3860;
+    box-shadow: 0 0 0 1px rgba(255, 56, 96, 0.3);
+}
+
+.bind-status {
+    margin: 0 0 0.5rem 0;
+    color: #00d1b2;
+    font-size: 0.85rem;
+}
+
+.bind-hint {
+    margin: 0 0 0.5rem 0;
+    color: #b5b5b5;
+    font-size: 0.8rem;
+}
+
+.bind-hint-centered {
+    text-align: left;
+    margin-bottom: 1rem;
+}
+
+.jump-binds .bind-input {
+    margin-bottom: 0.75rem;
+}
+
+.bind-buttons-spacer {
+    height: 2rem;
+}
+
 .textarea:not([rows]) {
     min-height: 15em;
 }
@@ -250,12 +312,17 @@ input[type="range"] {
         width: 100%;
     }
 
-    .jump-binds input.input {
-        width: 100%;
+    .bind-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
     }
 
     .field.button-group>.control:not(:last-child) {
         margin-right: 0rem;
+    }
+
+    .bind-buttons-spacer {
+        height: 1rem;
     }
 
     .actions {

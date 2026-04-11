@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="assets/css/main.css">
 
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="assets/js/bind-utils.js"></script>
 
 </head>
 
@@ -278,86 +279,208 @@
                 </div>
 
                 <!-- Binds -->
-                <div class="field jump-binds">
-                    <label class="label">Jump Bind(s):</label>
-                    <input class="input" type="text" v-model="binds.jump[0]" placeholder="e.g. space" />
-                    <input class="input" type="text" v-model="binds.jump[1]" placeholder="e.g. mwheelup (optional)" />
-                    <input class="input" type="text" v-model="binds.jump[2]" placeholder="e.g. mwheeldown (optional)" />
+                <p class="bind-hint bind-hint-centered">Backspace/Delete: press `Ctrl+Backspace` or `Ctrl+Del`.</p>
+                <div class="bind-grid">
+                    <div class="bind-row">
+                        <div class="bind-slot binds-group jump-binds">
+                            <label class="label">Jump Bind(s):</label>
+                            <p v-if="isBindCapturing('jump:0')" class="bind-status">Capturing: {{ bindCaptureStatus('jump:0', activeBindCaptureLabel()) }}</p>
+                            <input class="input bind-input" :class="bindFieldClass('jump:0')" type="text" v-model="binds.jump[0]" :placeholder="bindCapturePlaceholder('jump:0', 'Jump Bind 1')"
+                                readonly autocomplete="off" spellcheck="false"
+                                @click="startBindCapture('jump:0')"
+                                @blur="stopBindCapture"
+                                @contextmenu.prevent />
+                            <p v-if="isBindCapturing('jump:1')" class="bind-status">Capturing: {{ bindCaptureStatus('jump:1', activeBindCaptureLabel()) }}</p>
+                            <input class="input bind-input" :class="bindFieldClass('jump:1')" type="text" v-model="binds.jump[1]" :placeholder="bindCapturePlaceholder('jump:1', 'Jump Bind 2')"
+                                readonly autocomplete="off" spellcheck="false"
+                                @click="startBindCapture('jump:1')"
+                                @blur="stopBindCapture"
+                                @contextmenu.prevent />
+                            <p v-if="isBindCapturing('jump:2')" class="bind-status">Capturing: {{ bindCaptureStatus('jump:2', activeBindCaptureLabel()) }}</p>
+                            <input class="input bind-input" :class="bindFieldClass('jump:2')" type="text" v-model="binds.jump[2]" :placeholder="bindCapturePlaceholder('jump:2', 'Jump Bind 3')"
+                                readonly autocomplete="off" spellcheck="false"
+                                @click="startBindCapture('jump:2')"
+                                @blur="stopBindCapture"
+                                @contextmenu.prevent />
+                        </div>
+
+                        <div class="bind-slot binds-group">
+                            <label class="label">Fire:</label>
+                            <p v-if="isBindCapturing('fire')" class="bind-status">Capturing: {{ bindCaptureStatus('fire', activeBindCaptureLabel()) }}</p>
+                            <input class="input bind-input" :class="bindFieldClass('fire')" type="text" v-model="binds.fire" :placeholder="bindCapturePlaceholder('fire', 'Fire')"
+                                readonly autocomplete="off" spellcheck="false"
+                                @click="startBindCapture('fire')"
+                                @blur="stopBindCapture"
+                                @contextmenu.prevent />
+                            <label class="label mt-4">Secondary Fire:</label>
+                            <p v-if="isBindCapturing('secondaryFire')" class="bind-status">Capturing: {{ bindCaptureStatus('secondaryFire', activeBindCaptureLabel()) }}</p>
+                            <input class="input bind-input" :class="bindFieldClass('secondaryFire')" type="text" v-model="binds.secondaryFire" :placeholder="bindCapturePlaceholder('secondaryFire', 'Secondary Fire')"
+                                readonly autocomplete="off" spellcheck="false"
+                                @click="startBindCapture('secondaryFire')"
+                                @blur="stopBindCapture"
+                                @contextmenu.prevent />
+                        </div>
+                    </div>
+
+                    <div class="bind-row">
+                        <div class="bind-slot binds-group">
+                            <label class="label">Toggle Console:</label>
+                            <p v-if="isBindCapturing('toggleConsole')" class="bind-status">Capturing: {{ bindCaptureStatus('toggleConsole', activeBindCaptureLabel()) }}</p>
+                            <input class="input bind-input" :class="bindFieldClass('toggleConsole')" type="text" v-model="binds.toggleConsole" :placeholder="bindCapturePlaceholder('toggleConsole', 'Toggle Console')"
+                                readonly autocomplete="off" spellcheck="false"
+                                @click="startBindCapture('toggleConsole')"
+                                @blur="stopBindCapture"
+                                @contextmenu.prevent />
+                        </div>
+
+                        <div class="bind-slot binds-group">
+                            <label class="label">Use Microphone:</label>
+                            <p v-if="isBindCapturing('mic')" class="bind-status">Capturing: {{ bindCaptureStatus('mic', activeBindCaptureLabel()) }}</p>
+                            <input class="input bind-input" :class="bindFieldClass('mic')" type="text" v-model="binds.mic" :placeholder="bindCapturePlaceholder('mic', 'Use Microphone')"
+                                readonly autocomplete="off" spellcheck="false"
+                                @click="startBindCapture('mic')"
+                                @blur="stopBindCapture"
+                                @contextmenu.prevent />
+                        </div>
+                    </div>
+
+                    <div class="bind-row">
+                        <div class="bind-slot binds-group">
+                            <label class="label">Switch Viewmodel Hand:</label>
+                            <p v-if="isBindCapturing('viewmodelToggle')" class="bind-status">Capturing: {{ bindCaptureStatus('viewmodelToggle', activeBindCaptureLabel()) }}</p>
+                            <input class="input bind-input" :class="bindFieldClass('viewmodelToggle')" type="text" v-model="binds.viewmodelToggle" :placeholder="bindCapturePlaceholder('viewmodelToggle', 'Switch Viewmodel Hand')"
+                                readonly autocomplete="off" spellcheck="false"
+                                @click="startBindCapture('viewmodelToggle')"
+                                @blur="stopBindCapture"
+                                @contextmenu.prevent />
+                        </div>
+
+                        <div class="bind-slot binds-group">
+                            <label class="label">Scoreboard:</label>
+                            <p v-if="isBindCapturing('scoreboard')" class="bind-status">Capturing: {{ bindCaptureStatus('scoreboard', activeBindCaptureLabel()) }}</p>
+                            <input class="input bind-input" :class="bindFieldClass('scoreboard')" type="text" v-model="binds.scoreboard" :placeholder="bindCapturePlaceholder('scoreboard', 'Scoreboard')"
+                                readonly autocomplete="off" spellcheck="false"
+                                @click="startBindCapture('scoreboard')"
+                                @blur="stopBindCapture"
+                                @contextmenu.prevent />
+                        </div>
+                    </div>
+
+                    <div class="bind-row">
+                        <div class="bind-slot binds-group">
+                            <label class="label">Primary Weapon:</label>
+                            <p v-if="isBindCapturing('primaryWeapon')" class="bind-status">Capturing: {{ bindCaptureStatus('primaryWeapon', activeBindCaptureLabel()) }}</p>
+                            <input class="input bind-input" :class="bindFieldClass('primaryWeapon')" type="text" v-model="binds.primaryWeapon" :placeholder="bindCapturePlaceholder('primaryWeapon', 'Primary Weapon')"
+                                readonly autocomplete="off" spellcheck="false"
+                                @click="startBindCapture('primaryWeapon')"
+                                @blur="stopBindCapture"
+                                @contextmenu.prevent />
+                        </div>
+
+                        <div class="bind-slot binds-group">
+                            <label class="label">Secondary Weapon:</label>
+                            <p v-if="isBindCapturing('secondaryWeapon')" class="bind-status">Capturing: {{ bindCaptureStatus('secondaryWeapon', activeBindCaptureLabel()) }}</p>
+                            <input class="input bind-input" :class="bindFieldClass('secondaryWeapon')" type="text" v-model="binds.secondaryWeapon" :placeholder="bindCapturePlaceholder('secondaryWeapon', 'Secondary Weapon')"
+                                readonly autocomplete="off" spellcheck="false"
+                                @click="startBindCapture('secondaryWeapon')"
+                                @blur="stopBindCapture"
+                                @contextmenu.prevent />
+                        </div>
+                    </div>
+
+                    <div class="bind-row">
+                        <div class="bind-slot binds-group">
+                            <label class="label">Melee Weapon:</label>
+                            <p v-if="isBindCapturing('meleeWeapon')" class="bind-status">Capturing: {{ bindCaptureStatus('meleeWeapon', activeBindCaptureLabel()) }}</p>
+                            <input class="input bind-input" :class="bindFieldClass('meleeWeapon')" type="text" v-model="binds.meleeWeapon" :placeholder="bindCapturePlaceholder('meleeWeapon', 'Melee Weapon')"
+                                readonly autocomplete="off" spellcheck="false"
+                                @click="startBindCapture('meleeWeapon')"
+                                @blur="stopBindCapture"
+                                @contextmenu.prevent />
+                        </div>
+
+                        <div class="bind-slot binds-group">
+                            <label class="label">Cycle Grenades:</label>
+                            <p v-if="isBindCapturing('cycleGrenades')" class="bind-status">Capturing: {{ bindCaptureStatus('cycleGrenades', activeBindCaptureLabel()) }}</p>
+                            <input class="input bind-input" :class="bindFieldClass('cycleGrenades')" type="text" v-model="binds.cycleGrenades" :placeholder="bindCapturePlaceholder('cycleGrenades', 'Cycle Grenades')"
+                                readonly autocomplete="off" spellcheck="false"
+                                @click="startBindCapture('cycleGrenades')"
+                                @blur="stopBindCapture"
+                                @contextmenu.prevent />
+                        </div>
+                    </div>
+
+                    <div class="bind-row">
+                        <div class="bind-slot binds-group">
+                            <label class="label">Explosives & Traps:</label>
+                            <p v-if="isBindCapturing('explosives')" class="bind-status">Capturing: {{ bindCaptureStatus('explosives', activeBindCaptureLabel()) }}</p>
+                            <input class="input bind-input" :class="bindFieldClass('explosives')" type="text" v-model="binds.explosives" :placeholder="bindCapturePlaceholder('explosives', 'Explosives & Traps')"
+                                readonly autocomplete="off" spellcheck="false"
+                                @click="startBindCapture('explosives')"
+                                @blur="stopBindCapture"
+                                @contextmenu.prevent />
+                        </div>
+
+                        <div class="bind-slot binds-group">
+                            <label class="label">HE Grenade:</label>
+                            <p v-if="isBindCapturing('heGrenade')" class="bind-status">Capturing: {{ bindCaptureStatus('heGrenade', activeBindCaptureLabel()) }}</p>
+                            <input class="input bind-input" :class="bindFieldClass('heGrenade')" type="text" v-model="binds.heGrenade" :placeholder="bindCapturePlaceholder('heGrenade', 'HE Grenade')"
+                                readonly autocomplete="off" spellcheck="false"
+                                @click="startBindCapture('heGrenade')"
+                                @blur="stopBindCapture"
+                                @contextmenu.prevent />
+                        </div>
+                    </div>
+
+                    <div class="bind-row">
+                        <div class="bind-slot binds-group">
+                            <label class="label">Flashbang:</label>
+                            <p v-if="isBindCapturing('flashbang')" class="bind-status">Capturing: {{ bindCaptureStatus('flashbang', activeBindCaptureLabel()) }}</p>
+                            <input class="input bind-input" :class="bindFieldClass('flashbang')" type="text" v-model="binds.flashbang" :placeholder="bindCapturePlaceholder('flashbang', 'Flashbang')"
+                                readonly autocomplete="off" spellcheck="false"
+                                @click="startBindCapture('flashbang')"
+                                @blur="stopBindCapture"
+                                @contextmenu.prevent />
+                        </div>
+
+                        <div class="bind-slot binds-group binds-end">
+                            <label class="label">Smoke Grenade:</label>
+                            <p v-if="isBindCapturing('smoke')" class="bind-status">Capturing: {{ bindCaptureStatus('smoke', activeBindCaptureLabel()) }}</p>
+                            <input class="input bind-input" :class="bindFieldClass('smoke')" type="text" v-model="binds.smoke" :placeholder="bindCapturePlaceholder('smoke', 'Smoke Grenade')"
+                                readonly autocomplete="off" spellcheck="false"
+                                @click="startBindCapture('smoke')"
+                                @blur="stopBindCapture"
+                                @contextmenu.prevent />
+                        </div>
+                    </div>
+
+                    <div class="bind-row">
+                        <div class="bind-slot binds-group binds-end">
+                            <label class="label">Molotov Cocktail:</label>
+                            <p v-if="isBindCapturing('molotov')" class="bind-status">Capturing: {{ bindCaptureStatus('molotov', activeBindCaptureLabel()) }}</p>
+                            <input class="input bind-input" :class="bindFieldClass('molotov')" type="text" v-model="binds.molotov" :placeholder="bindCapturePlaceholder('molotov', 'Molotov Cocktail')"
+                                readonly autocomplete="off" spellcheck="false"
+                                @click="startBindCapture('molotov')"
+                                @blur="stopBindCapture"
+                                @contextmenu.prevent />
+                        </div>
+
+                        <div class="bind-slot"></div>
+                    </div>
                 </div>
 
-                <div class="field">
-                    <label class="label">Fire:</label>
-                    <input class="input" type="text" v-model="binds.fire" placeholder="e.g. mouse1" />
-                </div>
+                <div class="bind-buttons-spacer" aria-hidden="true"></div>
 
-                <div class="field">
-                    <label class="label">Secondary Fire:</label>
-                    <input class="input" type="text" v-model="binds.secondaryFire" placeholder="e.g. mouse2" />
-                </div>
-
-                <div class="field">
-                    <label class="label">Toggle Console:</label>
-                    <input class="input" type="text" v-model="binds.toggleConsole" placeholder="e.g. `" />
-                </div>
-
-                <div class="field">
-                    <label class="label">Use Microphone:</label>
-                    <input class="input" type="text" v-model="binds.mic" placeholder="e.g. k" />
-                </div>
-
-                <div class="field">
-                    <label class="label">Switch Viewmodel Hand:</label>
-                    <input class="input" type="text" v-model="binds.viewmodelToggle" placeholder="e.g. f10" />
-                </div>
-
-                <div class="field">
-                    <label class="label">Scoreboard:</label>
-                    <input class="input" type="text" v-model="binds.scoreboard" placeholder="e.g. TAB" />
-                </div>
-
-                <div class="field">
-                    <label class="label">Primary Weapon:</label>
-                    <input class="input" type="text" v-model="binds.primaryWeapon" placeholder="e.g. 1" />
-                </div>
-
-                <div class="field">
-                    <label class="label">Secondary Weapon:</label>
-                    <input class="input" type="text" v-model="binds.secondaryWeapon" placeholder="e.g. 2" />
-                </div>
-
-                <div class="field">
-                    <label class="label">Melee Weapon:</label>
-                    <input class="input" type="text" v-model="binds.meleeWeapon" placeholder="e.g. 3" />
-                </div>
-
-                <div class="field">
-                    <label class="label">Cycle Grenades:</label>
-                    <input class="input" type="text" v-model="binds.cycleGrenades" placeholder="e.g. 4" />
-                </div>
-
-                <div class="field">
-                    <label class="label">Explosives & Traps:</label>
-                    <input class="input" type="text" v-model="binds.explosives" placeholder="e.g. 5" />
-                </div>
-
-                <div class="field">
-                    <label class="label">HE Grenade:</label>
-                    <input class="input" type="text" v-model="binds.heGrenade" placeholder="e.g. h" />
-                </div>
-
-                <div class="field">
-                    <label class="label">Flashbang:</label>
-                    <input class="input" type="text" v-model="binds.flashbang" placeholder="e.g. f" />
-                </div>
-
-                <div class="field">
-                    <label class="label">Smoke Grenade:</label>
-                    <input class="input" type="text" v-model="binds.smoke" placeholder="e.g. g" />
-                </div>
-
-                <div class="field">
-                    <label class="label">Molotov Cocktail:</label>
-                    <input class="input" type="text" v-model="binds.molotov" placeholder="e.g. m" />
+                <div v-if="hasBindErrors" class="notification is-warning is-light">
+                    <p class="mb-2"><strong>Bind issues found:</strong></p>
+                    <ul>
+                        <li v-for="(error, key) in bindErrors" :key="key">{{ error }}</li>
+                    </ul>
+                    <p class="help">Press a key to bind it. Use the buttons below to set Escape or cancel capture.</p>
+                    <div v-if="activeBindCapture" class="buttons mt-2">
+                        <button class="button is-small is-warning" @click="assignEscapeToActiveBind" :disabled="!activeBindCapture">Set Escape</button>
+                        <button class="button is-small is-light" @click="cancelBindCapture" :disabled="!activeBindCapture">Cancel capture</button>
+                    </div>
                 </div>
 
                 <!-- Generate + Download + Reset + Upload -->
