@@ -3,6 +3,8 @@ Generate a custom Counter-Strike 2 (CS2) autoexec.cfg with personalized settings
 
 This little web tool allows players to create and download their own autoexec configuration file for CS2. You can customize game settings, crosshair, sensitivity, and keybindings with ease. Ideal for competitive players gamers who want a consistent setup across devices.
 
+https://mobbi.dev/cs2-autoexec-generator
+
 ## 🌐 Live Demo
 [![View Demo](https://img.shields.io/badge/View-Demo-green?style=for-the-badge)](https://mobbi.dev/cs2-autoexec-generator)
 
